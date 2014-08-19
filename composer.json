@@ -1,0 +1,25 @@
+{
+    "name": "kumar/nexmo",
+    "description": "Nexmo PHP library using guzzle",
+    "authors": [
+        {
+            "name": "Saravana Kumar",
+            "email": "saran87@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "illuminate/support": "4.2.*",
+        "guzzlehttp/guzzle": "~4.0"
+    },
+    "require-dev":{
+        "phpunit/phpunit": "4.2.*",
+        "mockery/mockery": "0.9.1"
+    },
+    "autoload": {
+        "psr-0": {
+            "Kumar\\Nexmo": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
