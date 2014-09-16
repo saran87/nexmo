@@ -19,5 +19,7 @@ return [
     'key'    => '4b25fb68', // Your Nexmo Api Key
     'secret' => '21c99c33', // Your Nexmo Secret Key
 
-    'from'  => '15853715085'
+    'from'  => '15853715085',
+
+    'shortCode' => '96167'
 ];

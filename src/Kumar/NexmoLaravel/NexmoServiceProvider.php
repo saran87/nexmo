@@ -1,4 +1,4 @@
-<?php namespace Kumar\Nexmo;
+<?php namespace Kumar\NexmoLaravel;
 
 use Illuminate\Support\ServiceProvider;
 

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Kumar\Nexmo;
+namespace Kumar\NexmoLaravel;
 
 
 use Illuminate\Support\Facades\Facade;
