@@ -1,6 +1,7 @@
 <?php namespace Kumar\NexmoLaravel;
 
 use Illuminate\Support\ServiceProvider;
+use Kumar\Nexmo\NexmoProvider;
 
 class NexmoServiceProvider extends ServiceProvider {
 
@@ -23,11 +24,15 @@ class NexmoServiceProvider extends ServiceProvider {
 
             $config = $app['config']['nexmo'] ?: $app['config']['nexmo::config'];
 
-            $nexmoMessage =  new NexmoClient($config['key'],$config['secret']);
+            $nexmoProvider =  new NexmoProvider($config['key'],$config['secret']);
 
-            $nexmoMessage->setFrom($config['from']);
+            $nexmoProvider->setFrom($config['from']);
 
-            return $nexmoMessage;
+            $nexmoProvider->setShortCode($config['shortcode']);
+
+            $nexmoProvider->setLogger($app['log'])->setQueue($app['queue'])->setEventDispatcher($app['events']);
+
+            return $nexmoProvider;
         });
 
 	}

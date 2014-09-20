@@ -21,5 +21,5 @@ return [
 
     'from'  => '',
 
-    'shortCode' => ''
+    'shortcode' => ''
 ];
