@@ -143,7 +143,7 @@ abstract class SMSObject  implements \ArrayAccess{
      */
     public function __isset($key)
     {
-        return ((isset($this->attributes[$key])  && ! \is_null($this->getAttributeValue($key))));
+        return ((isset($this->attributes[$key])  && ! \is_null($this->getAttribute($key))));
     }
 
     /**
