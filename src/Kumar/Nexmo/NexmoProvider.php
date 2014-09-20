@@ -2,6 +2,7 @@
 
     namespace Kumar\Nexmo;
 
+    use Illuminate\Events\Dispatcher;
     use Illuminate\Log\Writer;
     use Illuminate\Queue\QueueManager;
     use Kumar\Nexmo\Common\SMSCommand;
@@ -36,6 +37,13 @@
          * @var \Illuminate\Queue\QueueManager
          */
         protected $queue;
+
+        /**
+         * The event dispatcher instance.
+         *
+         * @var \Illuminate\Events\Dispatcher
+         */
+        protected $events;
 
         /**
          * Indicates if the actual sending is disabled.
@@ -85,6 +93,17 @@
         public function setLogger(Writer $logger)
         {
             $this->logger = $logger;
+
+            return $this;
+        }
+
+        /**
+         * @param Dispatcher $events
+         *
+         * @return $this
+         */
+        public function setEventDispatcher( Dispatcher $events = null){
+            $this->events = $events;
 
             return $this;
         }
@@ -141,7 +160,7 @@
              */
             $data = $this->getNexmoData($from, $to, $text, 'text');
 
-            $response = $this->sendData(SMSCommand::SEND_SMS, $data);
+            $response = $this->sendMessage(SMSCommand::SEND_SMS, $data);
 
             return $this->parse($response);
         }
@@ -172,7 +191,7 @@
              */
             $data = $this->getNexmoData($from, $to, $text, 'unicode');
 
-            return $this->parse($this->sendData(SMSCommand::SEND_SMS, $data));
+            return $this->parse($this->sendMessage(SMSCommand::SEND_SMS, $data));
         }
 
         /**
@@ -202,7 +221,7 @@
                 'udh'  => $udh
             );
 
-            return $this->parse($this->sendData(SMSCommand::SEND_SMS, $data));
+            return $this->parse($this->sendMessage(SMSCommand::SEND_SMS, $data));
         }
 
         /**
@@ -224,7 +243,7 @@
 
             $data =  $this->getNexmoData($from, $to, 'wappush', $title, $url, $validity);
 
-            return $this->parse($this->sendData(SMSCommand::SEND_SMS, $data));
+            return $this->parse($this->sendMessage(SMSCommand::SEND_SMS, $data));
 
         }
 
@@ -250,17 +269,17 @@
                 $data[$key] = $value;
             }
 
-            return $this->parse($this->sendData(SMSCommand::SEND_ALERT, $data));
+            return $this->parse($this->sendMessage(SMSCommand::SEND_ALERT, $data));
         }
 
         /**
-         * Get the delivery report
+         * @param bool $data
          *
-         * @return mixed
+         * @return SMSReceipt|mixed
          */
-        public function getDeliveryReport()
+        public function getDeliveryReport($data = false)
         {
-           return new SMSReceipt();
+           return new SMSReceipt($data);
         }
 
 
@@ -285,6 +304,7 @@
             if ($response->getStatusCode() == 200) {
 
                 $data = $response->json();
+
                 if (array_key_exists('message-count', $data)) {
 
                     foreach ($data['messages'] as $message) {
@@ -299,6 +319,87 @@
                     return $responseArray;
                 }
             }
+        }
+
+        /**
+         * Queue a new sms message for sending.
+         *
+         * @param  string  $command
+         * @param  array   $data
+         * @param  string  $queue
+         * @return void
+         */
+        public function queue($command, array $data, $queue = null)
+        {
+            $this->queue->push('Kumar\Nexmo\NexmoProvider@handleQueuedMessage', compact('command', 'data'), $queue);
+        }
+
+        /**
+         * Queue a new sms message for sending on the given queue.
+         *
+         * @param  string  $queue
+         * @param  string  $command
+         * @param  array   $data
+         * @return void
+         */
+        public function queueOn($queue, $command, array $data)
+        {
+            $this->queue($command, $data, $queue);
+        }
+
+        /**
+         * Queue a new sms message for sending after (n) seconds.
+         *
+         * @param  int  $delay
+         * @param  string  $command
+         * @param  array  $data
+         * @param  string  $queue
+         * @return void
+         */
+        public function later($delay, $command, array $data, $queue = null)
+        {
+            $this->queue->later($delay, 'Kumar\Nexmo\NexmoProvider@handleQueuedMessage', compact('command', 'data'), $queue);
+        }
+
+        /**
+         * Queue a new sms message for sending after (n) seconds on the given queue.
+         *
+         * @param  string  $queue
+         * @param  int  $delay
+         * @param  string $command
+         * @param  array  $data
+         * @return void
+         */
+        public function laterOn($queue, $delay, $command, array $data)
+        {
+            $this->later($delay, $command, $data, $queue);
+        }
+
+        /**
+         * Build the callable for a queued e-mail job.
+         *
+         * @param  mixed  $callback
+         * @return mixed
+         */
+        protected function buildQueueCallable($callback)
+        {
+            if ( ! $callback instanceof \Closure) return $callback;
+
+            return \serialize(new SerializableClosure($callback));
+        }
+
+        /**
+         * Handle a queued e-mail message job.
+         *
+         * @param  \Illuminate\Queue\Jobs\Job  $job
+         * @param  array  $data
+         * @return void
+         */
+        public function handleQueuedMessage($job, $data)
+        {
+            $this->sendData($data['command'], $data['data']);
+
+            $job->delete();
         }
 
         /**
@@ -354,6 +455,55 @@
             }
 
             return $data;
+        }
+
+        private function sendMessage($command, $data){
+
+            if ($this->events)
+            {
+                $this->events->fire('sms.sending', ['command' =>$command, 'data' =>$data]);
+            }
+
+            if($this->pretending){
+                $response = $this->logMessage($command, $data);
+            }else{
+                $response = $this->sendData($command, $data);
+            }
+
+            if ($this->events)
+            {
+                $this->events->fire('sms.sent',  ['command' =>$command, 'data' =>$data, 'response' =>$response]);
+            }
+            return $response;
+        }
+
+        /**
+         * @param $command
+         * @param $data
+         */
+        private function logMessage($command, $data){
+
+            if($this->logger){
+
+                $message = implode(', ', $data);
+
+                $this->logger->info("Pretending to {$command} to: {$message}");
+            }
+
+            $response = "{'message-count':'1', 'messages' : [{'messageId': 'pretend', 'status': 'pretend'}]}";
+
+            $responseStream = Stream::factory($response);
+            // print_r($responseStream);
+            try{
+                $response = new Response(200);
+            }
+            catch(\Exception $ex){
+                print_r($ex);
+            }
+
+            print_r($response);
+
+
         }
 
     }

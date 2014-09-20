@@ -16,10 +16,10 @@ return [
     |
     |
     */
-    'key'    => '4b25fb68', // Your Nexmo Api Key
-    'secret' => '21c99c33', // Your Nexmo Secret Key
+    'key'    => '', // Your Nexmo Api Key
+    'secret' => '', // Your Nexmo Secret Key
 
-    'from'  => '15853715085',
+    'from'  => '',
 
-    'shortCode' => '96167'
+    'shortCode' => ''
 ];

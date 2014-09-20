@@ -1,9 +1,8 @@
 <?php namespace Kumar\Nexmo;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Stream\Stream;
 use Kumar\Nexmo\Exception\NexmoServiceException;
-use stdClass;
-use Whoops\Example\Exception;
 
 /**
  * Class NexmoClient
@@ -131,5 +130,4 @@ abstract class NexmoClient
 
         return $this->client->createRequest($method,$url,['query'=>$data,'headers'=> $headers]);
     }
-
 }

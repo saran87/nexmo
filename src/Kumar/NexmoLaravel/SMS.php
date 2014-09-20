@@ -12,5 +12,5 @@ class SMS extends Facade {
      *
      * @return string
      */
-    protected static function getFacadeAccessor() { return 'Kumar\\Nexmo\\NexmoClient'; }
+    protected static function getFacadeAccessor() { return 'Kumar\\Nexmo\\NexmoProvider'; }
 } 

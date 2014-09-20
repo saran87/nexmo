@@ -19,7 +19,7 @@ class NexmoServiceProvider extends ServiceProvider {
 	public function register()
 	{
 		//
-        $this->app->bindShared('Kumar\\Nexmo\\NexmoClient',function($app){
+        $this->app->bindShared('Kumar\\Nexmo\\NexmoProvider',function($app){
 
             $config = $app['config']['nexmo'] ?: $app['config']['nexmo::config'];
 
