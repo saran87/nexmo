@@ -44,7 +44,7 @@
         {
             if (!$data) $data = $_REQUEST;
 
-            if (!isset($data['status'])) {
+            if (!isset($data['status']) && !isset($data['message-id'])) {
                 throw new NexmoMessageException("Invalid SMSReport format");
             }
 

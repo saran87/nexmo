@@ -3,6 +3,8 @@
 
 namespace Kumar\Nexmo\Common;
 
+use Kumar\Nexmo\Exception\NexmoMessageException;
+
 class SMSMessage extends SMSObject{
 
     public function __construct($data = false)

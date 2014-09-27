@@ -2,6 +2,7 @@
 
 
 namespace Kumar\Nexmo\Common;
+use Kumar\Nexmo\Exception\NexmoMessageException;
 
 
 /**
@@ -35,7 +36,7 @@ class SMSResponse extends SMSObject {
         if (!$data) $data = $_REQUEST;
 
         if (!isset($data['status'])) {
-            throw new NexmoMessageException("Invalid SMSReport format");
+            throw new NexmoMessageException("Invalid SMSResponse format");
         }
 
         parent::__construct($data);
