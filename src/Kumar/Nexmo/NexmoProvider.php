@@ -11,6 +11,7 @@
     use Kumar\Nexmo\Common\SMSResponse;
     use Kumar\Nexmo\Contract\SMSContract;
     use Kumar\Nexmo\Exception\NexmoMessageException;
+    use Kumar\NexmoLaravel\SMS;
 
     class NexmoProvider extends NexmoClient implements SMSContract
     {
@@ -142,23 +143,7 @@
          */
         public function sendText($to, $text, $from = null)
         {
-
-            $from = $from ? : $this->from;
-
-            $this->validateUTFEncoding($from);
-
-            $this->validateUTFEncoding($text);
-
-            /**
-             * Sanitize and encode the url
-             */
-            $from = $this->sanitizePhone($from);
-            $to =  $this->sanitizePhone($to);
-
-            /**
-             * prepare the data to be sent to nexmo
-             */
-            $data = $this->getNexmoData($from, $to, $text, 'text');
+            $data = $this->getTextData($to, $text, $from);
 
             $response = $this->sendMessage(SMSCommand::SEND_SMS, $data);
 
@@ -284,11 +269,13 @@
 
 
         /**
-         * @return SMSMessage
+         * @param bool $data
+         *
+         * @return SMSMessage|NexmoMessage
          */
-        public function getInboundMessage()
+        public function getInboundMessage($data = false)
         {
-            return new SMSMessage();
+            return new SMSMessage($data);
         }
 
         /**
@@ -319,6 +306,47 @@
                     return $responseArray;
                 }
             }
+        }
+
+
+        public function queueText($to,$text, $delay = false){
+
+            $data = $this->getTextData($to, $text, $this->from, $delay);
+
+            $this->queue(SMSCommand::SEND_SMS, $data);
+        }
+
+        public function queueTextOn($queue, $to, $text, $delay =  false){
+            $data = $this->getTextData($to, $text, $this->from, $delay);
+            $this->queueOn($queue, SMSCommand::SEND_SMS, $data);
+        }
+
+        private function getTextData($to, $text, $from = null, $delay = false){
+
+            $from = $from ? : $this->from;
+
+            $this->validateUTFEncoding($from);
+
+            $this->validateUTFEncoding($text);
+
+            /**
+             * Sanitize and encode the url
+             */
+            $from = $this->sanitizePhone($from);
+            $to =  $this->sanitizePhone($to);
+
+            /**
+             * prepare the data to be sent to nexmo
+             */
+            $data = $this->getNexmoData($from, $to, $text, 'text');
+
+            $data['delay'] = $delay;
+
+            return $data;
+        }
+
+        public function queueAlert($to, $data){
+
         }
 
         /**
@@ -398,6 +426,9 @@
         public function handleQueuedMessage($job, $data)
         {
             $this->sendData($data['command'], $data['data']);
+            if(array_key_exists('delay', $data['data'])){
+                sleep($data['data']['delay']);
+            }
 
             $job->delete();
         }
@@ -462,12 +493,14 @@
             if ($this->events)
             {
                 $this->events->fire('sms.sending', ['command' =>$command, 'data' =>$data]);
+                $this->log('Processing :',$command, $data);
             }
 
             if($this->pretending){
                 $response = $this->logMessage($command, $data);
             }else{
                 $response = $this->sendData($command, $data);
+                $this->log('Response from nexmo for : ',$command, $data);
             }
 
             if ($this->events)
@@ -480,6 +513,8 @@
         /**
          * @param $command
          * @param $data
+         *
+         * @return array
          */
         private function logMessage($command, $data){
 
@@ -490,20 +525,13 @@
                 $this->logger->info("Pretending to {$command} to: {$message}");
             }
 
-            $response = "{'message-count':'1', 'messages' : [{'messageId': 'pretend', 'status': 'pretend'}]}";
-
-            $responseStream = Stream::factory($response);
-            // print_r($responseStream);
-            try{
-                $response = new Response(200);
-            }
-            catch(\Exception $ex){
-                print_r($ex);
-            }
-
-            print_r($response);
-
-
+            return ['success'];
         }
 
+        private function log($message, $command, $data){
+            if($this->logger){
+                $this->logger->info($message . $command);
+                $this->logger->info($data);
+            }
+        }
     }

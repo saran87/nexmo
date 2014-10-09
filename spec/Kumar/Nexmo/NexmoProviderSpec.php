@@ -12,7 +12,7 @@ class NexmoProviderSpec extends ObjectBehavior
                        'from' => '',
                        'to' => '',
                        'shortcode'=> '',
-                       'pretend' => true    ];
+                       'pretend' =>  false];
 
     function  let(){
         $key = $this->config['key'];
@@ -53,7 +53,8 @@ class NexmoProviderSpec extends ObjectBehavior
     }**/
 
     function it_can_recieve_inbound_message(){
-        $this->getInboundMessage(['status' => 1])->shouldReturnAnInstanceOf('Kumar\Nexmo\Common\SMSMessage');
+        $message = $this->getInboundMessage(['type' => 'text']);
+        $message->shouldReturnAnInstanceOf('Kumar\Nexmo\Common\SMSMessage');
     }
 
     function it_will_through_MessageException(){
