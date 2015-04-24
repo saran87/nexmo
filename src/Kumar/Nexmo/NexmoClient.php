@@ -37,7 +37,7 @@ abstract class NexmoClient
         'buy_number' => array('method' => 'POST', 'url' => 'number/buy/{k}/{s}/{country_code}/{msisdn}'),
         'cancel_number' => array('method' => 'POST', 'url' => 'number/cancel/{k}/{s}/{country_code}/{msisdn}'),
         'send_sms' => array('method' => 'POST','headers' => ['Content-Type' => 'application/x-www-form-urlencoded'], 'url' => 'sms/json'),
-        'send_alert' => array('method' => 'POST', 'url' => 'sc/us/alert/json')
+        'send_alert' => array('method' => 'POST', 'url' => 'sc/us/alert/json', 'headers' => ['Content-Type' => 'application/x-www-form-urlencoded'])
     );
 
     /**
