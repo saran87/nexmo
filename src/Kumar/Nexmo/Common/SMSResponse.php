@@ -56,6 +56,6 @@ class SMSResponse extends SMSObject {
 
     public function getStatusMessage(){
 
-        return $this->errorCodeMap[$this->status];
+        return array_key_exists($this->status,$this->errorCodeMap) ? $this->errorCodeMap[$this->status] : $this->status;
     }
 } 

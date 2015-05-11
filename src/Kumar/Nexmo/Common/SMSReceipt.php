@@ -65,6 +65,6 @@
 
         public function getStatusMessage(){
 
-            return $this->errorCodeMap[$this->errCode];
+            return array_key_exists($this->errCode,$this->errorCodeMap) ? $this->errorCodeMap[$this->errCode] :$this->errCode;
         }
     }
